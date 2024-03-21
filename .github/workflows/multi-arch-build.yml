@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         arch:
           - aarch64_cortex-a53
@@ -79,8 +80,8 @@ jobs:
       - name: Upload packages to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          external_repository: libremesh/lime-feed
+          personal_token: ${{ secrets.PERSONAL_TOKEN }}
+          external_repository: a-gave/lime-feed
           publish_dir: bin/packages/${{ matrix.arch }}/libremesh/
           destination_dir: ${{ env.DEST_DIR }}/packages/${{ matrix.arch }}
 
