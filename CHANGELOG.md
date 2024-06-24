@@ -1,5 +1,43 @@
 All notable changes to this project will be documented in this file.
 
+## 2024.1 - Unreleased
+
+### Full changelog since 2024.1-rc1
+
+
+  - [`4bdd010`](https://github.com/libremesh/lime-packages/commit/4bdd010ef8d7182467bb86035e83f922b70d83d5)
+    readme: added network-profiles repository to ImageBuilder instructions
+    (merge [#1113](https://github.com/libremesh/lime-packages/pull/1113))
+  - [`3ef0a4a`](https://github.com/libremesh/lime-packages/commit/3ef0a4ac2988a6013ed7b7364ff9c94d9c910367)
+    Readme: update OpenWrt version in Docker instructions
+    (merge [#1116](https://github.com/libremesh/lime-packages/pull/1116))
+  - [`070d518`](https://github.com/libremesh/lime-packages/commit/070d5182b184702030335f17125cf5b18389df34)
+    lime-example: specify that the gateway line in the static proto is optional
+    (merge [#1114](https://github.com/libremesh/lime-packages/pull/1114))
+  - [`88b4fdd`](https://github.com/libremesh/lime-packages/commit/88b4fdde3e758fafd26bbc60f06a8a63b83b4bdb)
+    shared-state-async bump for late bleach fixup
+    (merge [#1111](https://github.com/libremesh/lime-packages/pull/1111))
+  - [`58bbd4d`](https://github.com/libremesh/lime-packages/commit/58bbd4debaa9dd9f3e2e42b1196348c207f97e7c)
+    fix broken profiles
+    (merge [#1115](https://github.com/libremesh/lime-packages/pull/#1115))
+  - [`cc6af11`](https://github.com/libremesh/lime-packages/commit/cc6af1119bd72d9eea91845046d5aafc1d6b716d)
+    shared-state-async: expose publish all
+  - [`d043d70`](https://github.com/libremesh/lime-packages/commit/d043d70fae1b53781a37653752b29518077248d9)
+    shared-state-async: add publisher call interface
+  - [`727af91`](https://github.com/libremesh/lime-packages/commit/727af91f23d7fb8d7a598605f2b6e012c0b11c2d)
+    Shared state async intial publish
+    (merge [#1104](https://github.com/libremesh/lime-packages/pull/1104))
+  - [`f326ad8`](https://github.com/libremesh/lime-packages/commit/f326ad84cddda7f399145e790676e94e2e2fbc32)
+    A few cleanups to packages
+    (merge [#1097](https://github.com/libremesh/lime-packages/pull/1097),
+    fix [#942](https://github.com/libremesh/lime-packages/issues/942))
+  - [`70b08a6`](https://github.com/libremesh/lime-packages/commit/70b08a691c860b55f47f4c0913fa2b472b0d99b5)
+    safe-upgrade: update calibration data partition name
+    (merge [#1098](https://github.com/libremesh/lime-packages/pull/1098))
+  - [`75f5d50`](https://github.com/libremesh/lime-packages/commit/75f5d508e8308e1ae7a8af047276600e94ded1d1)
+    Adds shared-state rpcd data,error output format and shared-state-async rpcd reimplementation
+    (merge [#1103](https://github.com/libremesh/lime-packages/pull/1103))
+
 ## 2024.1-rc1 - Release candidate 1 (2024-04-03)
 
 ### Full changelog since 2023.1-rc2
