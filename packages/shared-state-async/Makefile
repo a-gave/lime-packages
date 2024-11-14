@@ -19,6 +19,8 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-only
 
+# TEST: trigger ci 
+
 include $(TOPDIR)/rules.mk
 
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
