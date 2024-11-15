@@ -12,23 +12,24 @@ on:
       - ".github/workflows/*"
       - "libremesh.mk"
       - "packages/**"
+  workflow_dispatch:
 
 jobs:
   build:
     name: Build ${{ github.ref }}
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Build packages
-        uses: openwrt/gh-action-sdk@v5
+        uses: openwrt/gh-action-sdk@v7
         env:
           ARCH: "x86_64"
           FEEDNAME: "libremesh"
           IGNORE_ERRORS: "n m y"
           KEY_BUILD: "${{ secrets.KEY_BUILD }}"
-
+          INDEX: 1
+          
       - name: Set package destination
         run: |
           export TAG=$(echo "${{ github.ref }}" | cut -d '/' -f 3- | perl -pe 's/v([0-9])/$1/')
@@ -36,10 +37,10 @@ jobs:
           echo "DEST_DIR=$TAG" >> $GITHUB_ENV
 
       - name: Upload packages to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          external_repository: libremesh/lime-feed
+          external_repository: a-gave/lime-feed
           publish_dir: bin/packages/x86_64/libremesh/
           destination_dir: ${{ env.DEST_DIR }}
 
