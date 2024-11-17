@@ -9,7 +9,7 @@ on:
       - v*
       - '!v2020*'
     paths:
-      - ".github/workflows/*"
+      - ".github/workflows/build.yml"
       - "libremesh.mk"
       - "packages/**"
   workflow_dispatch:
@@ -55,7 +55,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          external_repository: libremesh/lime-feed
+          external_repository: a-gave/lime-feed
           publish_dir: bin/packages/x86_64/libremesh/
           destination_dir: ${{ matrix.output_path }}${{ env.DEST_DIR }}
 

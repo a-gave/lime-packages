@@ -9,6 +9,7 @@ on:
       - v*
       - '!v2020*'
     paths:
+      - ".github/workflows/multi-arch-build.yml"
       - 'packages/shared-state-async/**'
 
   # Allows you to run this workflow manually from the Actions tab
@@ -79,9 +80,9 @@ jobs:
       max-parallel: 10
       matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix_builds) }}
       # matrix:
-      #   version: ['main']
-      #   arch: ['x86_64']
-      #   output_path: ['openwrt_main']
+      #   include:
+      #     - { version: main, arch: x86_64, output_path: 'openwrt_main'}
+      #     - { version: main, arch: arc_archs, output_path: 'openwrt_main'}
     steps:
       - uses: actions/checkout@v4
 
@@ -99,6 +100,7 @@ jobs:
           NO_SHFMT_CHECK: 1
 
       - name: upload artifact
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.arch }}-${{ matrix.version }}
@@ -108,15 +110,15 @@ jobs:
     name: publish ${{ github.ref }}
     runs-on: ubuntu-latest
     if: ${{ always() }}
-    needs: build
+    needs: [generate_matrix, build]
     strategy:
       fail-fast: false
       max-parallel: 1
       matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix_builds) }}
       # matrix:
-      #   version: ['main']
-      #   arch: ['x86_64']
-      #   output_path: ['openwrt_main']
+      #   include:
+      #     - { version: main, arch: x86_64, output_path: 'openwrt_main'}
+      #     - { version: main, arch: arc_archs, output_path: 'openwrt_main'}
     steps:
       - uses: actions/checkout@v4
 
@@ -136,7 +138,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          external_repository: libremesh/lime-feed
+          external_repository: a-gave/lime-feed
           publish_dir: ./artifacts/
           destination_dir: arch_packages/${{ env.DEST_DIR }}/${{ matrix.output_path }}/${{ matrix.arch }}/
 
