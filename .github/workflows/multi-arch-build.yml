@@ -18,14 +18,8 @@ on:
 # Build packages using the openwrt sdk
 # for each architecture supported
 # in openwrt branches 'main', 'stable', 'old-stable'
-# 
-# NOTE: 
-# This list of branches will be updated manually 
-# - at next openwrt release, ideally adding '25.xx' and removing '23.05'
-# - whether it will be identified an incompatibility of the current libremesh code with an openwrt branch
 env:
-  BUILD_BRANCHES: "main 24.10 23.05"
-
+# NOTE:
 # workaround: build a package that selects '+shared-state-async'
 # as 'make package/shared-state-async/check' fails with 'Package HASH check failed'
   PACKAGES: "shared-state-bat_hosts"
@@ -36,20 +30,25 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix_builds: ${{ steps.define_matrix.outputs.matrix_builds }}
+      dest_dir: ${{ steps.set_package_destination.outputs.DEST_DIR }}
     steps:
       - name: Set package destination
+        id: set_package_destination
         run: |
           export TAG=$(echo "${{ github.ref }}" | cut -d '/' -f 3- | perl -pe 's/v([0-9])/$1/')
           echo "$TAG"
-          echo "DEST_DIR=$TAG" >> $GITHUB_ENV
+          echo "DEST_DIR=$TAG" >> $GITHUB_OUTPUT
 
       - name: Define matrix of branches and archs
         id: define_matrix
         run: |
           JSON='['
           FIRST_BUILD=1
-          echo "${{ env.BUILD_BRANCHES }}"
-          for version in ${{ env.BUILD_BRANCHES }}; do
+          versions=$(curl https://downloads.openwrt.org/.versions.json)
+          stable=$(echo $versions | jq | grep \"stable_ | sed 's|.*\"stable_version\": \"\(.*\)\",|\1|')
+          oldstable=$(echo $versions | jq | grep oldstable_ | sed 's|.*\"oldstable_version\": \"\(.*\)\",|\1|')
+
+          for version in "main" "${stable:0:5}" "${oldstable:0:5}"; do
 
             VERSION=$([ "$version" == "main" ] \
               && echo "main" || echo "openwrt-$version")
@@ -89,7 +88,7 @@ jobs:
       # matrix:
       #   include:
       #     - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt-main'}
-      #     - { version: main, arch: arc_archs, openwrt_branch_path: 'openwrt-main'}
+      #     - { version: main, arch: mips_24kc, openwrt_branch_path: 'openwrt-main'}
     steps:
       - uses: actions/checkout@v4
 
@@ -125,7 +124,7 @@ jobs:
       # matrix:
       #   include:
       #     - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt-main'}
-      #     - { version: main, arch: arc_archs, openwrt_branch_path: 'openwrt-main'}
+      #     - { version: main, arch: mips_24kc, openwrt_branch_path: 'openwrt-main'}
     steps:
       - uses: actions/checkout@v4
 
@@ -138,6 +137,6 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          external_repository: libremesh/lime-feed
+          external_repository: a-gave/lime-feed
           publish_dir: ./artifacts/
-          destination_dir: arch_packages/${{ env.DEST_DIR }}/${{ matrix.openwrt_branch_path }}/${{ matrix.arch }}/
+          destination_dir: arch_packages/${{ needs.generate_matrix.outputs.dest_dir }}/${{ matrix.openwrt_branch_path }}/${{ matrix.arch }}/

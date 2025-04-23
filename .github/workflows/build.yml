@@ -28,7 +28,7 @@ jobs:
       matrix:
         include:
           - { version: main, output_path: 'apk/'}
-          - { version: openwrt-23.05, output_path: ''}
+          - { version: openwrt-24.10, output_path: ''}
     steps:
       - uses: actions/checkout@v4
 
@@ -55,7 +55,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          external_repository: libremesh/lime-feed
+          external_repository: a-gave/lime-feed
           publish_dir: bin/packages/x86_64/libremesh/
           destination_dir: ${{ matrix.output_path }}${{ env.DEST_DIR }}
 
