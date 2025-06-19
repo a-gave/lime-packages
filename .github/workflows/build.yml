@@ -1,5 +1,5 @@
 name: Build packages
-
+# 
 on:
   release:
     types: [published]
@@ -13,6 +13,10 @@ on:
       - "libremesh.mk"
       - "packages/**"
   workflow_dispatch:
+    inputs:
+      packages:
+        description: "Packages to build (empty for all)"
+        required: false
 
 jobs:
   # Build all packages for x86_64 using the openwrt sdk
@@ -85,13 +89,14 @@ jobs:
           NO_DEFAULT_FEEDS: 1
           NO_REFRESH_CHECK: 1
           NO_SHFMT_CHECK: 1
+          PACKAGES: ${{ github.event.inputs.packages }}
           # V: sc
 
       - name: Upload packages to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          external_repository: libremesh/lime-feed
+          external_repository: a-gave/lime-feed
           publish_dir: bin/packages/x86_64/libremesh/
           destination_dir: "${{ matrix.pkg_manager_path }}${{ needs.generate_matrix.outputs.dest_dir }}/${{ matrix.openwrt_branch_path }}"
 

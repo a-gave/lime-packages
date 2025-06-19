@@ -30,6 +30,7 @@ PKG_VERSION=$(GIT_COMMIT_DATE)~$(GIT_COMMIT_TSTAMP)
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/libremesh/shared-state-async.git
 PKG_SOURCE_VERSION:=db58e3d16e8658417956f9bb42e7e87f6aadcd4d
+PKG_MIRROR_HASH:=a9026d92fed0c8f6f7bc452de58fcb6ea444086f73b836708dbfefc444cbd826
 PKG_MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 PKG_LICENSE:=AGPL-3.0
 
