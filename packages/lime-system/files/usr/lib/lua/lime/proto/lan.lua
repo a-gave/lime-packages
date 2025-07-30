@@ -1,46 +1,40 @@
 #!/usr/bin/lua
 
 lan = {}
+lan_dsa = {}
 
 local network = require("lime.network")
 local config = require("lime.config")
 local utils = require("lime.utils")
 
 lan.configured = false
-
---! Find a device section in network with
---! option name 'br-lan'
---! option type 'bridge'
-local function find_br_lan(uci)
-	local br_lan_section = nil
-	uci:foreach("network", "device",
-		function(s)
-			if br_lan_section then return end
-			local dev_type = uci:get("network", s[".name"], "type")
-			local dev_name = uci:get("network", s[".name"], "name")
-			if not (dev_type == 'bridge') then return end
-			if not (dev_name == 'br-lan') then return end
-			br_lan_section = s[".name"]
-		end
-	)
-	return br_lan_section
-end
+lan_dsa.configured = false
 
 function lan.configure(args)
-	if lan.configured then return end
-	lan.configured = true
+	local lans = utils.is_dsa() and {"lan", "lan_dsa"} or {"lan"}
+	for v,lan_if in pairs(lans) do
+		local lan_br = lan_if == 'lan' and "br-lan" or "br-dsa"
+		if lan_if == "lan_dsa" and lan_dsa.configured then return end 
+		if lan_if == "lan_dsa" then lan_dsa.configured = true end
+		if lan_if == "lan" and lan.configured then return end
+		if lan_if == "lan" then lan.configured = true end
 
-	local ipv4, ipv6 = network.primary_address()
-	local uci = config.get_uci_cursor()
-	uci:set("network", "lan", "interface")
-	uci:set("network", "lan", "ip6addr", ipv6:string())
-	uci:set("network", "lan", "ipaddr", ipv4:host():string())
-	uci:set("network", "lan", "netmask", ipv4:mask():string())
-	uci:set("network", "lan", "proto", "static")
-	uci:set("network", "lan", "mtu", "1500")
-	local br_lan_section = find_br_lan(uci)
-	if br_lan_section then uci:delete("network", br_lan_section, "ports") end
-	uci:save("network")
+		utils.log('lime.proto.lan Configuring interface: ' .. lan_if)
+		local uci = config.get_uci_cursor()
+		local ipv4, ipv6 = network.primary_address()
+		uci:set("network", lan_if, "interface")
+		uci:set("network", lan_if, "device", lan_br)
+		uci:set("network", lan_if, "ip6addr", ipv6:string())
+		uci:set("network", lan_if, "ipaddr", ipv4:host():string())
+		uci:set("network", lan_if, "netmask", ipv4:mask():string())
+		uci:set("network", lan_if, "proto", "static")
+		uci:set("network", lan_if, "mtu", "1500")
+		local br_lan_section = utils.find_bridge_cfgid(lan_br)
+		utils.log(br_lan_section)
+		if br_lan_section then uci:delete("network", br_lan_section, "ports") end
+		uci:save("network")
+	end
+-- end
 
 	-- disable bat0 on alfred if batadv not enabled
 	if utils.is_installed("alfred") then
@@ -63,10 +57,19 @@ end
 function lan.setup_interface(ifname, args)
 	if ifname:match("^wlan") then return end
 	if ifname:match(network.protoVlanSeparator.."%d+$") then return end
-
+	utils.log('lime.proto.lan setup interface ' .. ifname)
+	local lan_if
+	local lan_br
+	if utils.is_dsa() and ifname ~= "bat0" then
+		lan_if = "lan_dsa"
+		lan_br = "br-dsa"
+	else
+		lan_if = "lan"
+		lan_br = "br-lan"
+	end
 	local uci = config.get_uci_cursor()
 	local bridgedIfs = {}
-	local br_lan_section = find_br_lan(uci)
+	local br_lan_section = utils.find_bridge_cfgid(lan_br)
 	if not br_lan_section then return end
 	local oldIfs = uci:get("network", br_lan_section, "ports") or {}
 	-- it should be a table, it was a string in old OpenWrt releases

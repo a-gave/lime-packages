@@ -232,10 +232,81 @@ function network._is_dsa_conduit(dev)
 	return "reg" == fs.stat("/sys/class/net/" .. dev .. "/dsa/tagging", "type")
 end
 
+--! Create a bridge br-dsa for dsa devices
+function network.create_dsa_bridge(dsa_cpu, board)
+	local uci = config.get_uci_cursor()
+	local ports
+	local br_name = "br-dsa"
+
+	--! Get br-lan section name
+	local br_lan_section = utils.find_br_lan()
+	--! Get br-dsa section name if exist
+	local br_section = utils.find_bridge_cfgid(br_name)
+
+	local br_lan_mac = network.primary_mac();
+	local br_mac = utils.unsafe_shell('cat /sys/class/net/eth0/address')
+	br_lan_mac[5] = "aa"
+	br_lan_mac[5] = "11"
+	br_lan_mac[6] = "aa"
+	br_lan_mac = table.concat(br_lan_mac, ":")
+	-- utils.log(br_lan_mac)
+
+	--! Add all dsa user ports in brX by default
+	for role, role_table in pairs(board["network"] or {}) do
+		--! "ports" and "device" fields may be specified at the same time.
+		--! In this case, "ports" must be used.
+		ports = role_table["ports"]
+		if ports == nil then
+			ports = { role_table["device"] }
+		end
+	end
+
+	--! Create brX if not exist
+	if br_section == nil then
+		br_section = uci:add("network", "device")
+		utils.log('network.create_dsa_bridge Create bridge: ' .. br_name )
+		uci:set("network", br_section, "name", br_name)
+		uci:set("network", br_section, "type", "bridge")
+		uci:set("network", br_section, "macaddr", br_mac)
+		uci:save("network")
+
+		utils.unsafe_shell('uci set network.' .. br_section .. '.macaddr='.. br_mac)
+		utils.unsafe_shell('uci set network.' .. br_section .. '.bridge_empty="1"; \
+uci set network.' .. br_section .. '.mtu="1500"; \
+uci set network.' .. br_section .. '.ipv6="0"')
+
+ 	end
+
+	for _,port in pairs(ports) do 
+		utils.log('network.create_dsa_bridge Initialize network device: ' .. port)
+		local iface = port .. "_if"
+
+
+		utils.log('bridge created')
+		utils.unsafe_shell('uci add_list network.' .. br_section .. '.ports="' .. port .. '"')
+		utils.unsafe_shell('uci del_list network.' .. br_lan_section .. '.ports="' .. port .. '"')
+		utils.unsafe_shell('uci set network.' .. br_lan_section .. '.macaddr="'.. br_lan_mac .. '"')
+
+		utils.log('network.create_dsa_bridge Disable learning on port: ' .. port)
+		utils.unsafe_shell('uci set network.' .. port .. '=device; \
+			uci set network.' .. port .. '.name="' .. port .. '"; \
+			uci set network.' .. port .. '.learning=0; \
+			uci set network.' .. port .. '.macaddr="'.. br_mac ..'"; \
+			uci commit network'
+		)
+		-- Create interface for each ports with proto none
+		utils.log('network.create_dsa_bridge Create interface '.. iface .. ' on port ' .. port  .. ' with proto none')
+		utils.unsafe_shell('uci set network.' .. iface .. '=interface; \
+			uci set network.' .. iface .. '.proto="none"; \
+			uci set network.' .. iface .. '.device="' .. port .. '"; \
+			uci commit network'
+		)
+	end
+end
 
 function network.scandevices(specificIfaces)
-	local devices = {}
 	local wireless = require("lime.wireless")
+	local devices = {}
 	local cpu_ports = {}
 	local board = utils.getBoardAsTable()
 
@@ -251,6 +322,7 @@ function network.scandevices(specificIfaces)
 		if network._is_dsa_conduit(dev) then
 			utils.log( "network.scandevices.dev_parser ignored DSA conduit " ..
 			           "device %s", dev )
+			network.create_dsa_bridge(dsa_cpu, board)
 			return
 		end
 
@@ -373,6 +445,7 @@ function network.configure()
 
 	--! For each scanned fisical device, if there is a specific config apply that one otherwise apply general config
 	for device,flags in pairs(fisDevs) do
+		-- utils.log('Configuring device: '..device)
 		local owrtIf = specificIfaces[device]
 		local deviceProtos = generalProtocols
 		if owrtIf then
@@ -387,12 +460,12 @@ function network.configure()
 			if protoName == "manual" then break end -- If manual is specified do not configure interface
 			local protoModule = "lime.proto."..protoName
 			local needsConfig = utils.isModuleAvailable(protoModule)
-			if protoName ~= 'lan' and not flags["specific"] then
+			-- if protoName ~= 'lan' and not flags["specific"] then
 				--! Work around issue 1121. Do not configure any other
 				--! protocols than lime.proto.lan on dsa devices unless there
 				--! is a config net section for the device.
-				needsConfig = needsConfig and not utils.is_dsa(device)
-			end
+			-- 	needsConfig = needsConfig and not utils.is_dsa(device)
+			-- end
 			if needsConfig then
 				for k,v in pairs(flags) do args[k] = v end
 				local proto = require(protoModule)

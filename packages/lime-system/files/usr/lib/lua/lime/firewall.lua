@@ -34,6 +34,7 @@ function firewall.configure()
         uci:foreach("network", "interface",
             function(section)
                 if "lan" == section[".name"] or
+                   "lan_dsa" == section[".name"] or
                    "lm_" == string.sub(section[".name"], 1, 3) and
                    "_if" == string.sub(section[".name"], -3) then
                     table.insert(lanIfs, section[".name"])
