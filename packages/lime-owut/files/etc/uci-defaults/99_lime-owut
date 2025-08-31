@@ -1,0 +1,5 @@
+uci set attendedsysupgrade.server.url="https://sysupgrade.libremesh.org"
+uci set attendedsysupgrade.owut=owut
+uci set attendedsysupgrade.owut.repositories_mode="append"
+uci add_list attendedsysupgrade.owut.repository_aliases="SNAPSHOT main"
+uci commit attendedsysupgrade
