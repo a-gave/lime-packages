@@ -1,0 +1,15 @@
+#!/bin/sh
+
+cat > /tmp/owut_repos << EOF
+		repositories: {'libremesh': 'http://feed.libremesh.org/master/openwrt-'+(Number(test[0]) && test.substring(0,5) || 'main')+'/x86_64',
+			'libremesh_arch_packages': 'http://feed.libremesh.org/master/openwrt-'+(Number(test[0]) && test.substring(0,5) || 'main')+'/'+device.arch,
+			'profiles': 'http://feed.libremesh.org/profiles/openwrt-'+(Number(test[0]) && test.substring(0,5) || 'main')+'/x86_64'},
+
+		repository_keys: [ 'RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8' ]
+EOF
+
+sed -ie '/diff_packages:\ contains_defaults/r cat /tmp/owut_repos' /usr/bin/owut
+sed -ie '/updates\ =\ check_updates\(\)/a updates.missing = false;' /usr/bin/owut
+
+uci set attendedsysupgrade.server.url='https://sysupgrade.antennine.org'
+uci commit attendedsysupgrade
