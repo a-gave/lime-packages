@@ -115,6 +115,7 @@ jobs:
           # entries; gh-action-sdk appends each to feeds.conf. Pinning the
           # full 40-char SHA is required (smart-HTTP rejects short prefixes).
           EXTRA_FEEDS: ${{ matrix.extra_feeds }}
+          NO_DEFAULT_FEEDS: "1"
           NO_REFRESH_CHECK: "1"
           NO_SHFMT_CHECK: "1"
           # SDK-side `make package/index` is unreliable in CI; we index the
