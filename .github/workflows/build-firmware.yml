@@ -41,6 +41,11 @@ on:
         required: false
         type: boolean
         default: false
+      build_lime_packages_deps:
+        description: "Build all lime-packages dependencies, increases compilation time of feeds"
+        required: false
+        type: boolean
+        default: false
   schedule:
     # Daily lab sweep at 06:00 UTC (03:00 ART).
     - cron: "0 6 * * *"
@@ -103,6 +108,15 @@ jobs:
           key: lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-${{ matrix.extra_hash }}
           restore-keys: |
             lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-
+
+      - name: Prevent the compilation of all dependencies of the libremesh packages
+        if: github.event.inputs.build_lime_packages_deps != 'true'
+        run: |
+          sed -i \
+            -e 's,DEPENDS:=,EXTRA_DEPENDS:=,g' \
+            -e 's,:=+,:=,' \
+            -e 's/\([ \t]\)+\([^=]\)/\1\2/g' \
+            $(grep -l "PKGARCH:=all" packages/*/Makefile)
 
       - name: Build packages with openwrt/gh-action-sdk
         if: steps.cache-feed.outputs.cache-hit != 'true'
