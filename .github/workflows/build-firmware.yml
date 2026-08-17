@@ -41,6 +41,11 @@ on:
         required: false
         type: boolean
         default: false
+      build_lime_packages_deps:
+        description: "Build all lime-packages dependencies, increases compilation time of feeds"
+        required: false
+        type: boolean
+        default: false
   schedule:
     # Daily lab sweep at 06:00 UTC (03:00 ART).
     - cron: "0 6 * * *"
@@ -92,21 +97,30 @@ jobs:
       - name: Free disk
         run: sudo rm -rf /opt/hostedtoolcache /usr/share/dotnet /usr/local/lib/android
 
-      - name: Restore feed cache
-        id: cache-feed
-        uses: actions/cache@v4
-        with:
-          path: feed-artifact/lime_packages
-          # `extra_hash` is a 12-char sha256 prefix over (extra_feeds,
-          # extra_packages); restore-keys deliberately omits it so a stale
-          # extras pin never falls back to a partial match.
-          key: lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-${{ matrix.extra_hash }}
-          restore-keys: |
-            lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-
+      # - name: Restore feed cache
+      #   id: cache-feed
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: feed-artifact/lime_packages
+      #     # `extra_hash` is a 12-char sha256 prefix over (extra_feeds,
+      #     # extra_packages); restore-keys deliberately omits it so a stale
+      #     # extras pin never falls back to a partial match.
+      #     key: lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-${{ matrix.extra_hash }}
+      #     restore-keys: |
+      #       lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-
+
+      # - name: Prevent the compilation of all dependencies of the libremesh packages
+      #   if: steps.cache-feed.outputs.cache-hit != 'true' && github.event.inputs.build_lime_packages_deps != 'true'
+      #   run: |
+      #     sed -i \
+      #       -e 's,DEPENDS:=,EXTRA_DEPENDS:=,g' \
+      #       -e 's,:=+,:=,' \
+      #       -e 's/\([ \t]\)+\([^=]\)/\1\2/g' \
+      #       $(grep -l "PKGARCH:=all" packages/*/Makefile)
 
       - name: Build packages with openwrt/gh-action-sdk
         if: steps.cache-feed.outputs.cache-hit != 'true'
-        uses: openwrt/gh-action-sdk@v9
+        uses: a-gave/gh-action-sdk@default_feeds_list
         env:
           ARCH: ${{ matrix.sdk_arch }}
           FEEDNAME: lime_packages
@@ -115,12 +129,15 @@ jobs:
           # entries; gh-action-sdk appends each to feeds.conf. Pinning the
           # full 40-char SHA is required (smart-HTTP rejects short prefixes).
           EXTRA_FEEDS: ${{ matrix.extra_feeds }}
+          NO_DEFAULT_FEEDS: "1"
+          DEFAULT_FEEDS_LIST: "base"
           NO_REFRESH_CHECK: "1"
           NO_SHFMT_CHECK: "1"
           # SDK-side `make package/index` is unreliable in CI; we index the
           # feed downstream with ImageBuilder's ipkg-make-index / apk mkndx.
           INDEX: "0"
           IGNORE_ERRORS: "n m y"
+          # V: "sc"
 
       - name: Diagnose feed build output
         if: steps.cache-feed.outputs.cache-hit != 'true'
