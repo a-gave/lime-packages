@@ -7,7 +7,7 @@ PKG_NAME?=$(notdir ${CURDIR})
 # [year].[day_of_year].[seconds_of_day]~[commit_short_hash] eg. 24.322.80622~a403707
 PKG_VERSION?=$(if $(DUMP),x,$(strip $(shell \
     if git log -1 >/dev/null 2>/dev/null; then \
-      set -- $$(git log -1 --format="%ct %h" --abbrev=7); \
+      set -- $$(git log -1 --format="%ct %h" --abbrev=7 -- .); \
         secs="$$(($$1 % 86400))"; \
         yday="$$(date --utc --date="@$$1" "+%y.%j")"; \
         printf '%s.%05d~%s' "$$yday" "$$secs" "$$2"; \
